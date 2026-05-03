@@ -1,3 +1,8 @@
+// Dynamic API base URL
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000'
+  : '';
+
 // Set today date
 const today = new Date().toISOString().split("T")[0];
 document.getElementById("date").value = today;
@@ -52,7 +57,7 @@ async function addRoutine() {
   }
 
   try {
-    await fetch("http://localhost:5000/add", {
+    await fetch(`${API_BASE}/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -73,7 +78,7 @@ async function render() {
   const date = document.getElementById("date").value;
 
   try {
-    const res = await fetch(`http://localhost:5000/get/${date}`);
+    const res = await fetch(`${API_BASE}/get/${date}`);
     const routines = await res.json();
 
     const timeline = document.getElementById("timeline");
@@ -135,11 +140,11 @@ function updateProgress(total, completed) {
 // Toggle complete
 async function toggleComplete(id) {
   try {
-    const res = await fetch(`http://localhost:5000/get/${document.getElementById("date").value}`);
+    const res = await fetch(`${API_BASE}/get/${document.getElementById("date").value}`);
     const routines = await res.json();
     const item = routines.find(r => r._id === id);
     if (item) {
-      await fetch(`http://localhost:5000/update/${id}`, {
+      await fetch(`${API_BASE}/update/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -156,7 +161,7 @@ async function toggleComplete(id) {
 // Edit
 async function editRoutine(id) {
   try {
-    const res = await fetch(`http://localhost:5000/get/${document.getElementById("date").value}`);
+    const res = await fetch(`${API_BASE}/get/${document.getElementById("date").value}`);
     const routines = await res.json();
     const item = routines.find(r => r._id === id);
     if (item) {
@@ -164,7 +169,7 @@ async function editRoutine(id) {
       const newDesc = prompt("Edit description:", item.desc);
 
       if (newActivity !== null && newDesc !== null) {
-        await fetch(`http://localhost:5000/update/${id}`, {
+        await fetch(`${API_BASE}/update/${id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json"
@@ -183,7 +188,7 @@ async function editRoutine(id) {
 async function deleteRoutine(id) {
   if (confirm("Are you sure you want to delete this routine?")) {
     try {
-      await fetch(`http://localhost:5000/delete/${id}`, {
+      await fetch(`${API_BASE}/delete/${id}`, {
         method: "DELETE"
       });
       await render();
