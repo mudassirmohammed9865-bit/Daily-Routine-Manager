@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Daily Routine Planner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-spacer"></div>
+    <h1 class="title">My Daily Routine Planner</h1>
+    <div class="date-section">
+      <div class="date-row">
+        <h2>Select Date:</h2>
+        <div id="selectedDate" class="selected-date"></div>
+      </div>
+      <input type="date" id="date">
+    </div>
+  </div>
+  <!-- move the progress outside the header -->
+  <div class="progress-box">
+    <p id="progressText">0% Completed</p>
+    <div class="progress-bar">
+      <div id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- Add Routine Form -->
+    <div class="form">
+      <input type="time" id="time">
+      <input type="text" id="activity" placeholder="Enter Activity">
+      <input type="text" id="desc" placeholder="Enter description">
+      <button onclick="addRoutine()">Add</button>
+    </div>
+
+    <!-- Dynamic Timeline (JS will fill this) -->
+    <div id="timeline" class="timeline"></div>
+
+    <!-- Default Static Routine (Assignment Requirement) -->
+    <h2 class="subtitle">Sample Routine</h2>
+
+    <div class="timeline">
+
+      <div class="block morning">
+        <h2>7:00 AM</h2>
+        <p><strong>Alarm</strong></p>
+        <p>Start the day with fresh energy</p>
+      </div>
+
+      <div class="block morning">
+        <h2>8:00 AM</h2>
+        <p><strong>Exercise</strong></p>
+        <p>Morning workout to stay fit</p>
+      </div>
+
+      <div class="block morning">
+        <h2>10:00 AM</h2>
+        <p><strong>Study</strong></p>
+        <p>Focus on learning new skills</p>
+      </div>
+
+      <div class="block afternoon">
+        <h2>2:00 PM</h2>
+        <p><strong>Lunch & Rest</strong></p>
+        <p>Relax and recharge</p>
+      </div>
+
+      <div class="block evening">
+        <h2>6:00 PM</h2>
+        <p><strong>Projects / Coding</strong></p>
+        <p>Work on personal projects</p>
+      </div>
+
+      <div class="block night">
+        <h2>10:00 PM</h2>
+        <p><strong>Sleep</strong></p>
+        <p>End the day with proper rest</p>
+      </div>
+
+    </div>
+
+  </div>
+  <div class="main-layout">
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+    <!-- YOUR WHOLE EXISTING CODE HERE -->
+  </div>
+
+</div>
+
+  <script src="script.js"></script>
+</body>
+</html>
