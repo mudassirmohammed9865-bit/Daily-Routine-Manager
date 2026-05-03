@@ -92,6 +92,14 @@
   </div>
 
 </div>
+<button onclick="logout()">Logout</button>
+
+<script>
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "/login.html";
+}
+</script>
 
   <script src="script.js"></script>
 </body>

@@ -1,4 +1,11 @@
-// Dynamic API base URL
+if (!localStorage.getItem("token")) {
+  window.location.href = "/login.html";
+}
+
+// ✅ ADD THIS (GLOBAL TOKEN)
+const token = localStorage.getItem("token");
+
+// Dynamic API base URI
 const API_BASE = window.location.hostname === 'localhost' 
   ? 'http://localhost:5000'
   : '';
@@ -21,22 +28,18 @@ function formatDateForDisplay(dateString) {
 function updateSelectedDateDisplay() {
   const dateValue = document.getElementById("date").value;
   const displayElement = document.getElementById("selectedDate");
-  if (dateValue) {
-    displayElement.textContent = formatDateForDisplay(dateValue);
-  } else {
-    displayElement.textContent = "";
-  }
+  displayElement.textContent = dateValue
+    ? formatDateForDisplay(dateValue)
+    : "";
 }
 
 // Format time
 function formatTime(time) {
-  if (!time || !time.includes(":")) {
-    return "12:00 AM"; // Default time if invalid
-  }
+  if (!time || !time.includes(":")) return "12:00 AM";
 
   let [hour, minute] = time.split(":");
   hour = parseInt(hour);
-  minute = minute || "00"; // Default to 00 if minute is undefined
+  minute = minute || "00";
 
   let ampm = hour >= 12 ? "PM" : "AM";
   hour = hour % 12 || 12;
@@ -44,23 +47,21 @@ function formatTime(time) {
   return `${hour}:${minute} ${ampm}`;
 }
 
-// Add routine
+// ➕ ADD ROUTINE
 async function addRoutine() {
   const date = document.getElementById("date").value;
   const time = document.getElementById("time").value || "12:00";
   const activity = document.getElementById("activity").value.trim();
   const desc = document.getElementById("desc").value.trim();
 
-  if (!activity) {
-    alert("Please enter an activity");
-    return;
-  }
+  if (!activity) return alert("Please enter an activity");
 
   try {
     await fetch(`${API_BASE}/add`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": token   // ✅ ADDED
       },
       body: JSON.stringify({ date, time, activity, desc, completed: false })
     });
@@ -73,21 +74,22 @@ async function addRoutine() {
   }
 }
 
-// Render
+// 📥 RENDER
 async function render() {
   const date = document.getElementById("date").value;
 
   try {
-    const res = await fetch(`${API_BASE}/get/${date}`);
-    const routines = await res.json();
+    const res = await fetch(`${API_BASE}/get/${date}`, {
+      headers: {
+        "Authorization": token   // ✅ ADDED
+      }
+    });
 
+    const routines = await res.json();
     const timeline = document.getElementById("timeline");
     timeline.innerHTML = "";
 
-    let completedCount = 0;
-    routines.forEach(item => {
-      if (item.completed) completedCount++;
-    });
+    let completedCount = routines.filter(r => r.completed).length;
 
     routines.forEach(item => {
       const div = document.createElement("div");
@@ -100,70 +102,68 @@ async function render() {
         </div>
         <div class="desc">${item.desc}</div>
         <div class="actions">
-          <button class="toggle-btn" data-id="${item._id}">
+          <button onclick="toggleComplete('${item._id}')">
             ${item.completed ? "Undo" : "Done"}
           </button>
-          <button class="edit-btn" data-id="${item._id}">Edit</button>
-          <button class="delete-btn delete" data-id="${item._id}">Delete</button>
+          <button onclick="editRoutine('${item._id}')">Edit</button>
+          <button onclick="deleteRoutine('${item._id}')">Delete</button>
         </div>
       `;
-
-      // Add event listeners
-      const toggleBtn = div.querySelector('.toggle-btn');
-      const editBtn = div.querySelector('.edit-btn');
-      const deleteBtn = div.querySelector('.delete-btn');
-
-      toggleBtn.addEventListener('click', () => toggleComplete(item._id));
-      editBtn.addEventListener('click', () => editRoutine(item._id));
-      deleteBtn.addEventListener('click', () => deleteRoutine(item._id));
 
       timeline.appendChild(div);
     });
 
     updateProgress(routines.length, completedCount);
   } catch (err) {
-    console.error("Error rendering routines:", err);
+    console.error(err);
   }
 }
 
-// Progress update
+// 📊 Progress
 function updateProgress(total, completed) {
   const percent = total ? Math.round((completed / total) * 100) : 0;
 
-  document.getElementById("progressText").innerText =
-    percent + "% Completed";
-
-  document.getElementById("progressFill").style.width =
-    percent + "%";
+  document.getElementById("progressText").innerText = percent + "% Completed";
+  document.getElementById("progressFill").style.width = percent + "%";
 }
 
-// Toggle complete
+// ✅ TOGGLE COMPLETE
 async function toggleComplete(id) {
   try {
-    const res = await fetch(`${API_BASE}/get/${document.getElementById("date").value}`);
+    const res = await fetch(`${API_BASE}/get/${document.getElementById("date").value}`, {
+      headers: { "Authorization": token }
+    });
+
     const routines = await res.json();
     const item = routines.find(r => r._id === id);
+
     if (item) {
       await fetch(`${API_BASE}/update/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": token   // ✅ ADDED
         },
         body: JSON.stringify({ completed: !item.completed })
       });
+
       await render();
     }
   } catch (err) {
-    alert("Error toggling complete: " + err.message);
+    alert(err.message);
   }
 }
 
-// Edit
+// ✏️ EDIT
 async function editRoutine(id) {
   try {
-    const res = await fetch(`${API_BASE}/get/${document.getElementById("date").value}`);
+    const res = await fetch(`${API_BASE}/get/${document.getElementById("date").value}`, {
+      headers: { "Authorization": token }
+    });
+
     const routines = await res.json();
     const item = routines.find(r => r._id === id);
+
     if (item) {
       const newActivity = prompt("Edit activity:", item.activity);
       const newDesc = prompt("Edit description:", item.desc);
@@ -172,33 +172,39 @@ async function editRoutine(id) {
         await fetch(`${API_BASE}/update/${id}`, {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": token   // ✅ ADDED
           },
           body: JSON.stringify({ activity: newActivity, desc: newDesc })
         });
+
         await render();
       }
     }
   } catch (err) {
-    alert("Error editing routine: " + err.message);
+    alert(err.message);
   }
 }
 
-// Delete
+// ❌ DELETE
 async function deleteRoutine(id) {
-  if (confirm("Are you sure you want to delete this routine?")) {
-    try {
-      await fetch(`${API_BASE}/delete/${id}`, {
-        method: "DELETE"
-      });
-      await render();
-    } catch (err) {
-      alert("Error deleting routine: " + err.message);
-    }
+  if (!confirm("Are you sure?")) return;
+
+  try {
+    await fetch(`${API_BASE}/delete/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": token   // ✅ ADDED
+      }
+    });
+
+    await render();
+  } catch (err) {
+    alert(err.message);
   }
 }
 
-// Change date
+// Date change
 document.getElementById("date").addEventListener("change", () => {
   updateSelectedDateDisplay();
   render();
