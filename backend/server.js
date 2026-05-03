@@ -16,8 +16,15 @@ app.use(express.json());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/routine")
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.error("MongoDB connection failed:", err));
+  .then(() => {
+    console.log("MongoDB connected successfully");
+    // Create indexes
+    User.collection.createIndex({ email: 1 }, { unique: true });
+  })
+  .catch(err => {
+    console.error("MongoDB connection failed:", err.message);
+    process.exit(1);
+  });
 
 /*sign up*/
 app.post("/signup", async (req, res) => {
@@ -28,19 +35,23 @@ app.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = new User({ email, password: hashed });
+    const user = new User({ email: email.toLowerCase(), password: hashed });
     await user.save();
 
     res.json({ message: "User created successfully" });
   } catch (err) {
-    console.error("Signup error:", err);
-    res.status(500).json({ message: "Error creating user" });
+    console.error("Signup error details:", err.message, err.code);
+    // Return more specific errors
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+    res.status(500).json({ message: "Error creating user: " + err.message });
   }
 });
 
@@ -53,7 +64,7 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) return res.status(400).json({ message: "User not found" });
 
