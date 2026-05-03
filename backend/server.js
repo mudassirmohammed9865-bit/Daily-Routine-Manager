@@ -1,46 +1,73 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const User = require("./models/User");
-
-const SECRET = process.env.JWT_SECRET || "mysecretkey";
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const User = require("./models/User.js");
+const Routine = require("./models/routine.js");
+const path = require("path");
+
+const SECRET = process.env.JWT_SECRET || "mysecretkey";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-let routines = []; // In-memory storage for routines
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/routine")
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.error("MongoDB connection failed:", err));
+
 /*sign up*/
-
 app.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const hashed = await bcrypt.hash(password, 10);
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
 
-  const user = new User({ email, password: hashed });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
 
-  await user.save();
+    const hashed = await bcrypt.hash(password, 10);
+    const user = new User({ email, password: hashed });
+    await user.save();
 
-  res.json({ message: "User created" });
+    res.json({ message: "User created successfully" });
+  } catch (err) {
+    console.error("Signup error:", err);
+    res.status(500).json({ message: "Error creating user" });
+  }
 });
 
 /*login*/
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
 
-  if (!user) return res.status(400).json({ message: "User not found" });
+    const user = await User.findOne({ email });
 
-  const match = await bcrypt.compare(password, user.password);
+    if (!user) return res.status(400).json({ message: "User not found" });
 
-  if (!match) return res.status(400).json({ message: "Wrong password" });
+    const match = await bcrypt.compare(password, user.password);
 
-  const token = jwt.sign({ id: user._id }, SECRET);
+    if (!match) return res.status(400).json({ message: "Wrong password" });
 
-  res.json({ token });
+    const token = jwt.sign({ id: user._id }, SECRET);
+
+    res.json({ token });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Login failed" });
+  }
 });
 /*auth middleware*/
 
@@ -60,51 +87,72 @@ function auth(req, res, next) {
 
 /* ➕ Add Routine */
 app.post("/add", auth, async (req, res) => {
-  const newRoutine = new Routine({
-    ...req.body,
-    userId: req.userId
-  });
+  try {
+    const newRoutine = new Routine({
+      ...req.body,
+      userId: req.userId
+    });
 
-  await newRoutine.save();
-  res.send("Saved");
+    await newRoutine.save();
+    res.json({ message: "Routine saved", routine: newRoutine });
+  } catch (err) {
+    console.error("Add routine error:", err);
+    res.status(500).json({ message: "Error saving routine" });
+  }
 });
 
 /* 📥 Get by Date */
-app.post("/add", auth, async (req, res) => {
-  const newRoutine = new Routine({
-    ...req.body,
-    userId: req.userId
-  });
-
-  await newRoutine.save();
-  res.send("Saved");
+app.get("/get/:date", auth, async (req, res) => {
+  try {
+    const routines = await Routine.find({
+      userId: req.userId,
+      date: req.params.date
+    });
+    res.json(routines);
+  } catch (err) {
+    console.error("Get routines error:", err);
+    res.status(500).json({ message: "Error fetching routines" });
+  }
 });
 
 /* ✏️ Update */
 app.put("/update/:id", auth, async (req, res) => {
-  const updated = await Routine.findOneAndUpdate(
-    { _id: req.params.id, userId: req.userId },
-    req.body,
-    { new: true }
-  );
+  try {
+    const updated = await Routine.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      req.body,
+      { new: true }
+    );
 
-  if (!updated) {
-    return res.status(404).send("Not found");
+    if (!updated) {
+      return res.status(404).json({ message: "Routine not found" });
+    }
+
+    res.json({ message: "Updated", routine: updated });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).json({ message: "Error updating routine" });
   }
-
-  res.send("Updated");
 });
 
 /* ❌ Delete */
 app.delete("/delete/:id", auth, async (req, res) => {
-  await Routine.findOneAndDelete({
-    _id: req.params.id,
-    userId: req.userId
-  });
-  res.send("Deleted");
-});
+  try {
+    const deleted = await Routine.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.userId
+    });
 
-const path = require("path");
+    if (!deleted) {
+      return res.status(404).json({ message: "Routine not found" });
+    }
+
+    res.json({ message: "Deleted" });
+  } catch (err) {
+    console.error("Delete error:", err);
+    res.status(500).json({ message: "Error deleting routine" });
+  }
+});
 
 // Serve frontend folder
 app.use(express.static(path.join(__dirname, "../frontend")));
