@@ -210,5 +210,13 @@ document.getElementById("date").addEventListener("change", () => {
   render();
 });
 
+// 🚪 LOGOUT
+function logout() {
+  if (confirm("Are you sure you want to logout?")) {
+    localStorage.removeItem("token");
+    window.location.href = "/login.html";
+  }
+}
+
 // Initial load
 render();
