@@ -1,49 +1,55 @@
+// 🔐 Check login
 if (!localStorage.getItem("token")) {
   window.location.href = "/login.html";
 }
 
-// ✅ ADD THIS (GLOBAL TOKEN)
+// Token
 const token = localStorage.getItem("token");
 
-// Dynamic API base URI
-const API_BASE = window.location.hostname === 'localhost' 
-  ? 'http://localhost:5000'
-  : '';
+// ✅ API BASE
+const API = (() => {
+  const host = window.location.hostname;
+  const port = window.location.port;
+
+  if (window.location.protocol === "file:") {
+    return "http://localhost:5000";
+  }
+
+  if ((host === "localhost" || host === "127.0.0.1") && port && port !== "5000") {
+    return "http://localhost:5000";
+  }
+
+  return window.location.origin;
+})();
+
+console.log("App API base:", API);
 
 // Set today date
 const today = new Date().toISOString().split("T")[0];
 document.getElementById("date").value = today;
 updateSelectedDateDisplay();
 
-// Format date for display
+// Format date
 function formatDateForDisplay(dateString) {
   const date = new Date(dateString);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}-${month}-${year}`;
+  return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth()+1)
+    .toString().padStart(2, '0')}-${date.getFullYear()}`;
 }
 
-// Update selected date display
+// Update date display
 function updateSelectedDateDisplay() {
   const dateValue = document.getElementById("date").value;
-  const displayElement = document.getElementById("selectedDate");
-  displayElement.textContent = dateValue
-    ? formatDateForDisplay(dateValue)
-    : "";
+  document.getElementById("selectedDate").textContent =
+    dateValue ? formatDateForDisplay(dateValue) : "";
 }
 
 // Format time
 function formatTime(time) {
   if (!time || !time.includes(":")) return "12:00 AM";
-
   let [hour, minute] = time.split(":");
   hour = parseInt(hour);
-  minute = minute || "00";
-
   let ampm = hour >= 12 ? "PM" : "AM";
   hour = hour % 12 || 12;
-
   return `${hour}:${minute} ${ampm}`;
 }
 
@@ -54,23 +60,23 @@ async function addRoutine() {
   const activity = document.getElementById("activity").value.trim();
   const desc = document.getElementById("desc").value.trim();
 
-  if (!activity) return alert("Please enter an activity");
+  if (!activity) return alert("Enter activity");
 
   try {
-    await fetch(`${API_BASE}/add`, {
+    await fetch(`${API}/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": token   // ✅ ADDED
+        "Authorization": token
       },
       body: JSON.stringify({ date, time, activity, desc, completed: false })
     });
 
-    await render();
+    render();
     document.getElementById("activity").value = "";
     document.getElementById("desc").value = "";
   } catch (err) {
-    alert("Error adding routine: " + err.message);
+    alert("Error: " + err.message);
   }
 }
 
@@ -79,10 +85,8 @@ async function render() {
   const date = document.getElementById("date").value;
 
   try {
-    const res = await fetch(`${API_BASE}/get/${date}`, {
-      headers: {
-        "Authorization": token   // ✅ ADDED
-      }
+    const res = await fetch(`${API}/get/${date}`, {
+      headers: { "Authorization": token }
     });
 
     const routines = await res.json();
@@ -122,86 +126,71 @@ async function render() {
 // 📊 Progress
 function updateProgress(total, completed) {
   const percent = total ? Math.round((completed / total) * 100) : 0;
-
   document.getElementById("progressText").innerText = percent + "% Completed";
   document.getElementById("progressFill").style.width = percent + "%";
 }
 
-// ✅ TOGGLE COMPLETE
+// ✅ TOGGLE
 async function toggleComplete(id) {
-  try {
-    const res = await fetch(`${API_BASE}/get/${document.getElementById("date").value}`, {
-      headers: { "Authorization": token }
+  const res = await fetch(`${API}/get/${document.getElementById("date").value}`, {
+    headers: { "Authorization": token }
+  });
+
+  const routines = await res.json();
+  const item = routines.find(r => r._id === id);
+
+  if (item) {
+    await fetch(`${API}/update/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": token
+      },
+      body: JSON.stringify({ completed: !item.completed })
     });
 
-    const routines = await res.json();
-    const item = routines.find(r => r._id === id);
-
-    if (item) {
-      await fetch(`${API_BASE}/update/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": token   // ✅ ADDED
-        },
-        body: JSON.stringify({ completed: !item.completed })
-      });
-
-      await render();
-    }
-  } catch (err) {
-    alert(err.message);
+    render();
   }
 }
 
 // ✏️ EDIT
 async function editRoutine(id) {
-  try {
-    const res = await fetch(`${API_BASE}/get/${document.getElementById("date").value}`, {
-      headers: { "Authorization": token }
-    });
+  const res = await fetch(`${API}/get/${document.getElementById("date").value}`, {
+    headers: { "Authorization": token }
+  });
 
-    const routines = await res.json();
-    const item = routines.find(r => r._id === id);
+  const routines = await res.json();
+  const item = routines.find(r => r._id === id);
 
-    if (item) {
-      const newActivity = prompt("Edit activity:", item.activity);
-      const newDesc = prompt("Edit description:", item.desc);
+  if (item) {
+    const newActivity = prompt("Edit activity:", item.activity);
+    const newDesc = prompt("Edit description:", item.desc);
 
-      if (newActivity !== null && newDesc !== null) {
-        await fetch(`${API_BASE}/update/${id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": token   // ✅ ADDED
-          },
-          body: JSON.stringify({ activity: newActivity, desc: newDesc })
-        });
+    if (newActivity && newDesc) {
+      await fetch(`${API}/update/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token
+        },
+        body: JSON.stringify({ activity: newActivity, desc: newDesc })
+      });
 
-        await render();
-      }
+      render();
     }
-  } catch (err) {
-    alert(err.message);
   }
 }
 
 // ❌ DELETE
 async function deleteRoutine(id) {
-  if (!confirm("Are you sure?")) return;
+  if (!confirm("Delete?")) return;
 
-  try {
-    await fetch(`${API_BASE}/delete/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": token   // ✅ ADDED
-      }
-    });
+  await fetch(`${API}/delete/${id}`, {
+    method: "DELETE",
+    headers: { "Authorization": token }
+  });
 
-    await render();
-  } catch (err) {
-    alert(err.message);
-  }
+  render();
 }
 
 // Date change
@@ -212,11 +201,9 @@ document.getElementById("date").addEventListener("change", () => {
 
 // 🚪 LOGOUT
 function logout() {
-  if (confirm("Are you sure you want to logout?")) {
-    localStorage.removeItem("token");
-    window.location.href = "/login.html";
-  }
+  localStorage.removeItem("token");
+  window.location.href = "/login.html";
 }
 
-// Initial load
+// Load
 render();

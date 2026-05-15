@@ -3,202 +3,303 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Daily Routine Planner</title>
+  <title>Login - Routine Planner</title>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    .auth-container {
-      background: white;
-      padding: 40px;
-      border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      width: 100%;
-      max-width: 400px;
-    }
-    .auth-container h2 {
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+
+  background: linear-gradient(
+    135deg,
+    #0f2027 0%,
+    #203a43 35%,
+    #2c5364 70%,
+    #00c9a7 100%
+  );
+
+  background-size: 400% 400%;
+  animation: gradientBG 10s ease infinite;
+}
+
+/* Animated Gradient */
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.auth-container {
+  background: rgba(255, 255, 255, 0.08);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  padding: 60px 50px;
+
+  border-radius: 25px;
+
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  width: 100%;
+  max-width: 380px;
+
+  color: #ffffff;
+
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 0 20px rgba(0, 201, 167, 0.15);
+
+  transition: 0.3s ease;
+}
+
+.auth-container:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    0 0 30px rgba(0, 201, 167, 0.25);
+}
+
+    h2 {
       text-align: center;
-      color: #333;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
+
     input {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-      box-sizing: border-box;
+      width: 95%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      text-align: left;
     }
-    input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
-    }
+
     button {
       width: 100%;
-      padding: 12px;
-      background: #667eea;
-      color: white;
+      padding: 10px;
       border: none;
-      border-radius: 4px;
-      font-size: 16px;
+      border-radius: 5px;
+      background: #000000;
+      color: white;
       font-weight: bold;
       cursor: pointer;
-      transition: background 0.3s;
       margin-bottom: 10px;
     }
+
     button:hover {
       background: #5568d3;
     }
+
     .toggle-btn {
-      background: #764ba2;
-      width: 100%;
-      text-align: center;
+      background: #000000;
     }
-    .toggle-btn:hover {
-      background: #6a3e94;
-    }
+
     .error {
-      color: #d32f2f;
-      margin-bottom: 15px;
+      color: red;
       text-align: center;
-      font-size: 14px;
+      margin-bottom: 10px;
     }
+
     .success {
-      color: #388e3c;
-      margin-bottom: 15px;
+      color: green;
       text-align: center;
-      font-size: 14px;
+      margin-bottom: 10px;
     }
+    .login-desc {
+  text-align: center;
+  color: #e5e5e5;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 10px 0 25px;
+  max-width: 500px;
+  font-style: oblique;
+}
+.welcome {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 1000;
+  font-style: italic;
+}
   </style>
 </head>
-<body>
-  <div class="auth-container">
-    <div id="loginForm">
-      <h2>Login</h2>
-      <div id="loginError" class="error"></div>
-      <input id="loginEmail" type="email" placeholder="Email">
-      <input id="loginPassword" type="password" placeholder="Password">
-      <button onclick="login()">Login</button>
-      <button class="toggle-btn" onclick="toggleForms()">Create Account</button>
-    </div>
 
-    <div id="signupForm" style="display: none;">
-      <h2>Sign Up</h2>
-      <div id="signupError" class="error"></div>
-      <div id="signupSuccess" class="success"></div>
-      <input id="signupEmail" type="email" placeholder="Email">
-      <input id="signupPassword" type="password" placeholder="Password">
-      <input id="signupPassword2" type="password" placeholder="Confirm Password">
-      <button onclick="signup()">Sign Up</button>
-      <button class="toggle-btn" onclick="toggleForms()">Back to Login</button>
-    </div>
+<body>
+<script>
+  const currentHost = window.location.hostname;
+  const currentPort = window.location.port;
+  const shouldRedirect = (currentHost === 'localhost' || currentHost === '127.0.0.1')
+    && currentPort && currentPort !== '5000';
+
+  if (window.location.protocol === 'file:' || shouldRedirect) {
+    window.location.href = 'http://localhost:5000/login.html';
+  }
+</script>
+
+<div class="auth-container">
+
+  <!-- LOGIN FORM -->
+       <h1 class="welcome">Welcome Back</h1>
+  <div id="loginForm">
+    <h2>Login</h2>
+    <div id="loginError" class="error"></div>
+
+    <input id="loginEmail" type="email" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+
+    <button type="button" onclick="login()">Login</button>
+    <button class="toggle-btn" type="button" onclick="toggleForms()">Create Account</button>
   </div>
 
-  <script>
-    function toggleForms() {
-      document.getElementById("loginForm").style.display = 
-        document.getElementById("loginForm").style.display === "none" ? "block" : "none";
-      document.getElementById("signupForm").style.display = 
-        document.getElementById("signupForm").style.display === "none" ? "block" : "none";
-    }
+  <!-- SIGNUP FORM -->
+  <div id="signupForm" style="display:none;">
+    <h2>Sign Up</h2>
+    <div id="signupError" class="error"></div>
+    <div id="signupSuccess" class="success"></div>
 
-    async function login() {
-      const email = document.getElementById("loginEmail").value.trim();
-      const password = document.getElementById("loginPassword").value;
-      const errorDiv = document.getElementById("loginError");
-      errorDiv.textContent = "";
+    <input id="signupEmail" type="email" placeholder="Email">
+    <input id="signupPassword" type="password" placeholder="Password">
+    <input id="signupPassword2" type="password" placeholder="Confirm Password">
 
-      if (!email || !password) {
-        errorDiv.textContent = "Please enter email and password";
-        return;
-      }
+    <button type="button" onclick="signup()">Sign Up</button>
+    <button class="toggle-btn" type="button" onclick="toggleForms()">Back to Login</button>
+  </div>
+<p class="login-desc">
+  Plan your day smarter, stay organized, and track your daily goals with a personalized routine planner designed to improve productivity and maintain consistency.
+</p>
+</div>
 
-      try {
-        const res = await fetch("/login", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ email, password })
-        });
+<script>
+const API = (() => {
+  const host = window.location.hostname;
+  const port = window.location.port;
 
-        const data = await res.json();
+  if (window.location.protocol === "file:") {
+    return "http://localhost:5000";
+  }
 
-        if (!res.ok) {
-          errorDiv.textContent = data.message || "Login failed";
-          return;
-        }
+  if ((host === "localhost" || host === "127.0.0.1") && port && port !== "5000") {
+    return "http://localhost:5000";
+  }
 
-        localStorage.setItem("token", data.token);
-        window.location.href = "/";
-      } catch (err) {
-        errorDiv.textContent = "Connection error. Please try again.";
-        console.error(err);
-      }
-    }
+  return window.location.origin;
+})();
 
-    async function signup() {
-      const email = document.getElementById("signupEmail").value.trim();
-      const password = document.getElementById("signupPassword").value;
-      const password2 = document.getElementById("signupPassword2").value;
-      const errorDiv = document.getElementById("signupError");
-      const successDiv = document.getElementById("signupSuccess");
-      errorDiv.textContent = "";
-      successDiv.textContent = "";
+console.log("Auth API base:", API);
 
-      if (!email || !password || !password2) {
-        errorDiv.textContent = "All fields are required";
-        return;
-      }
+// Toggle forms
+function toggleForms() {
+  const login = document.getElementById("loginForm");
+  const signup = document.getElementById("signupForm");
 
-      if (password !== password2) {
-        errorDiv.textContent = "Passwords do not match";
-        return;
-      }
+  login.style.display = login.style.display === "none" ? "block" : "none";
+  signup.style.display = signup.style.display === "none" ? "block" : "none";
+}
 
-      if (password.length < 6) {
-        errorDiv.textContent = "Password must be at least 6 characters";
-        return;
-      }
+// LOGIN
+async function login() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const errorDiv = document.getElementById("loginError");
 
-      try {
-        const res = await fetch("/signup", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ email, password })
-        });
+  errorDiv.textContent = "";
 
-        const data = await res.json();
+  if (!email || !password) {
+    errorDiv.textContent = "Enter email & password";
+    return;
+  }
 
-        if (!res.ok) {
-          errorDiv.textContent = data.message || "Signup failed";
-          return;
-        }
-
-        successDiv.textContent = "Account created! Redirecting to login...";
-        setTimeout(() => toggleForms(), 2000);
-      } catch (err) {
-        errorDiv.textContent = "Connection error. Please try again.";
-        console.error(err);
-      }
-    }
-
-    // Allow Enter key
-    document.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        if (document.getElementById("loginForm").style.display !== "none") {
-          login();
-        } else {
-          signup();
-        }
-      }
+  try {
+    const res = await fetch(`${API}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
     });
-  </script>
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorDiv.textContent = data.message || "Login failed";
+      return;
+    }
+
+    localStorage.setItem("token", data.token);
+
+    // redirect to main app
+    window.location.href = "/index.html";
+
+  } catch (err) {
+    errorDiv.textContent = "Connection error";
+    console.error(err);
+  }
+}
+
+// SIGNUP
+async function signup() {
+  const email = document.getElementById("signupEmail").value.trim();
+  const password = document.getElementById("signupPassword").value;
+  const password2 = document.getElementById("signupPassword2").value;
+
+  const errorDiv = document.getElementById("signupError");
+  const successDiv = document.getElementById("signupSuccess");
+
+  errorDiv.textContent = "";
+  successDiv.textContent = "";
+
+  if (!email || !password || !password2) {
+    errorDiv.textContent = "All fields required";
+    return;
+  }
+
+  if (password !== password2) {
+    errorDiv.textContent = "Passwords do not match";
+    return;
+  }
+
+  if (password.length < 6) {
+    errorDiv.textContent = "Password must be at least 6 characters";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorDiv.textContent = data.message || "Signup failed";
+      return;
+    }
+
+    successDiv.textContent = "Account created!";
+    setTimeout(() => toggleForms(), 1500);
+
+  } catch (err) {
+    errorDiv.textContent = "Connection error";
+    console.error(err);
+  }
+}
+</script>
+
 </body>
 </html>

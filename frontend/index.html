@@ -2,10 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Daily Routine Planner</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<script>
+  const currentHost = window.location.hostname;
+  const currentPort = window.location.port;
+  const shouldRedirect = (currentHost === 'localhost' || currentHost === '127.0.0.1')
+    && currentPort && currentPort !== '5000';
+
+  if (window.location.protocol === 'file:' || shouldRedirect) {
+    window.location.href = 'http://localhost:5000/login.html';
+  }
+</script>
 
   <!-- Header -->
   <div class="header">
@@ -85,23 +96,6 @@
     </div>
 
   </div>
-  <div class="main-layout">
-
-  <!-- MAIN CONTENT -->
-  <div class="content">
-    <!-- YOUR WHOLE EXISTING CODE HERE -->
-  </div>
-
-</div>
-<button onclick="logout()">Logout</button>
-
-<script>
-function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "/login.html";
-}
-</script>
-
   <script src="script.js"></script>
 </body>
 </html>
